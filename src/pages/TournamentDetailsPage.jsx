@@ -5,13 +5,17 @@ import EmptyState from "../components/common/EmptyState";
 import StatusBadge from "../components/common/StatusBadge";
 import AppShell from "../components/layout/AppShell";
 import ScoreboardTable from "../components/player/ScoreboardTable";
-import { getAdminTournamentById } from "../services/adminTournamentService";
+import {
+  getAdminTournamentById,
+  getTournamentAnalytics,
+} from "../services/adminTournamentService";
 import {
   getPlayerTournamentById,
   getTournamentScores,
   likeTournament,
   unlikeTournament,
 } from "../services/playerTournamentService";
+import { getCategoryLabel } from "../utils/constants";
 import { formatDateTime } from "../utils/formatters";
 import { getSession } from "../utils/session";
 import { buildQuestionOptions } from "../utils/quiz";
@@ -21,6 +25,7 @@ export default function TournamentDetailsPage({ mode }) {
   const session = getSession();
   const [tournament, setTournament] = useState(null);
   const [scores, setScores] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [feedback, setFeedback] = useState("");
@@ -37,13 +42,15 @@ export default function TournamentDetailsPage({ mode }) {
             ? getAdminTournamentById(tournamentId)
             : getPlayerTournamentById(tournamentId);
 
-        const [tournamentResponse, scoresResponse] = await Promise.all([
+        const [tournamentResponse, scoresResponse, analyticsResponse] = await Promise.all([
           tournamentRequest,
           mode === "player" ? getTournamentScores(tournamentId) : Promise.resolve([]),
+          mode === "admin" ? getTournamentAnalytics(tournamentId) : Promise.resolve(null),
         ]);
 
         setTournament(tournamentResponse);
         setScores(scoresResponse);
+        setAnalytics(analyticsResponse);
       } catch (loadError) {
         setError(loadError.message);
       } finally {
@@ -83,7 +90,7 @@ export default function TournamentDetailsPage({ mode }) {
   return (
     <AppShell
       title={mode === "admin" ? "Tournament details" : "Tournament overview"}
-      subtitle="Questions come from the backend response directly. The player page also loads the scoreboard endpoint."
+      subtitle="This page uses the current backend tournament DTO, leaderboard endpoint, and admin analytics endpoint."
       actions={
         mode === "player" && tournament ? (
           <>
@@ -122,8 +129,8 @@ export default function TournamentDetailsPage({ mode }) {
           <section className="panel stack">
             <div className="row-between">
               <div>
-                <h2>{tournament.title}</h2>
-                <p className="lead">{tournament.subject}</p>
+                <h2>{tournament.name}</h2>
+                <p className="lead">{tournament.category ?? getCategoryLabel(tournament.categoryId)}</p>
               </div>
               <StatusBadge status={tournament.status} />
             </div>
@@ -131,75 +138,119 @@ export default function TournamentDetailsPage({ mode }) {
             <div className="stats-row">
               <div className="stat-card">
                 <div className="stat-label">Difficulty</div>
-                <div className="stat-value" style={{ fontSize: "1.35rem" }}>
+                <div className="stat-value" style={{ fontSize: "1.2rem" }}>
                   {tournament.difficulty}
                 </div>
               </div>
               <div className="stat-card">
+                <div className="stat-label">Start Date</div>
+                <div style={{ fontWeight: 700 }}>{formatDateTime(tournament.startDate)}</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-label">End Date</div>
+                <div style={{ fontWeight: 700 }}>{formatDateTime(tournament.endDate)}</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-label">Passing Score</div>
+                <div className="stat-value" style={{ fontSize: "1.2rem" }}>
+                  {tournament.minPassingScore}%
+                </div>
+              </div>
+              <div className="stat-card">
                 <div className="stat-label">Questions</div>
-                <div className="stat-value" style={{ fontSize: "1.35rem" }}>
+                <div className="stat-value" style={{ fontSize: "1.2rem" }}>
                   {tournament.totalQuestions}
                 </div>
               </div>
               <div className="stat-card">
                 <div className="stat-label">Likes</div>
-                <div className="stat-value" style={{ fontSize: "1.35rem" }}>
+                <div className="stat-value" style={{ fontSize: "1.2rem" }}>
                   {tournament.totalLikes}
                 </div>
               </div>
-              <div className="stat-card">
-                <div className="stat-label">Created</div>
-                <div style={{ fontWeight: 700 }}>{formatDateTime(tournament.createdAt)}</div>
-                <div className="muted">by {tournament.createdByUsername}</div>
-              </div>
             </div>
           </section>
+
+          {mode === "admin" && analytics ? (
+            <section className="stats-row">
+              <div className="stat-card">
+                <div className="stat-label">Attempts</div>
+                <div className="stat-value" style={{ fontSize: "1.2rem" }}>
+                  {analytics.totalAttempts}
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-label">Average Score</div>
+                <div className="stat-value" style={{ fontSize: "1.2rem" }}>
+                  {analytics.averageScore}
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-label">Highest Score</div>
+                <div className="stat-value" style={{ fontSize: "1.2rem" }}>
+                  {analytics.highestScore}
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-label">Pass Rate</div>
+                <div className="stat-value" style={{ fontSize: "1.2rem" }}>
+                  {analytics.passRate}%
+                </div>
+              </div>
+            </section>
+          ) : null}
 
           <section className="panel stack">
             <div className="panel-header">
               <div>
                 <h2>Question Details</h2>
                 <p className="helper-text">
-                  The question text is returned by the backend. Correct and incorrect
-                  answers are labelled below, but the current DTO does not expose their values.
+                  Admin detail uses the backend DTO that now includes the correct answer.
                 </p>
               </div>
             </div>
 
             {tournament.questions?.length ? (
               <div className="stack">
-                {tournament.questions.map((question, index) => (
-                  <article
-                    className="question-card stack"
-                    key={question.id}
-                    data-testid={`question-detail-${question.id}`}
-                  >
-                    <div>
-                      <div className="eyebrow">Question {index + 1}</div>
-                      <h3>{question.questionText}</h3>
-                    </div>
-                    <div className="grid grid-2">
-                      <div className="option-card">
-                        <strong>Correct Answer</strong>
-                        <div className="muted">TODO backend: not exposed by current backend DTO</div>
+                {tournament.questions.map((question, index) => {
+                  const options = buildQuestionOptions(question);
+                  const incorrectAnswers = options.filter((option) => option !== question.correctAnswer);
+
+                  return (
+                    <article
+                      className="question-card stack"
+                      key={question.id}
+                      data-testid={`question-detail-${question.id}`}
+                    >
+                      <div>
+                        <div className="eyebrow">Question {index + 1}</div>
+                        <h3>{question.questionText}</h3>
                       </div>
-                      <div className="option-card">
-                        <strong>Incorrect Answers</strong>
-                        <div className="muted">TODO backend: not exposed separately by current backend DTO</div>
-                      </div>
-                    </div>
-                    <div className="stack">
-                      <strong>Available Options Returned By API</strong>
-                      <div className="grid grid-2">
-                        {buildQuestionOptions(question).map((option) => (
-                          <div className="option-card" key={option}>
-                            {option}
+                      {mode === "admin" ? (
+                        <div className="grid grid-2">
+                          <div className="option-card">
+                            <strong>Correct Answer</strong>
+                            <div className="muted">{question.correctAnswer ?? "Not available"}</div>
                           </div>
-                        ))}
+                          <div className="option-card">
+                            <strong>Incorrect Answers</strong>
+                            <div className="muted">{incorrectAnswers.join(", ") || "Not available"}</div>
+                          </div>
+                        </div>
+                      ) : null}
+                      <div className="stack">
+                        <strong>Options</strong>
+                        <div className="grid grid-2">
+                          {options.map((option) => (
+                            <div className="option-card" key={option}>
+                              {option}
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  </article>
-                ))}
+                    </article>
+                  );
+                })}
               </div>
             ) : (
               <EmptyState message="No questions are attached to this tournament." />
@@ -212,10 +263,7 @@ export default function TournamentDetailsPage({ mode }) {
                 <div>
                   <h2>Leaderboard</h2>
                   <p className="helper-text">
-                    Loaded from the real `/scores` endpoint. TODO backend: there is
-                    no endpoint that tells the frontend whether the current user has
-                    already liked this tournament, so the UI exposes explicit Like
-                    and Unlike actions instead of guessing a toggle state.
+                    Loaded from the real `/scores` endpoint with aggregate tournament values.
                   </p>
                 </div>
               </div>

@@ -7,8 +7,7 @@ import { saveSession } from "../utils/session";
 import { validateLogin } from "../utils/validators";
 
 const initialValues = {
-  username: "",
-  email: "",
+  usernameOrEmail: "",
   password: "",
 };
 
@@ -28,8 +27,7 @@ export default function LoginPage() {
 
   function useAdminDemo() {
     setValues({
-      username: "admin",
-      email: "admin@quiztournament.local",
+      usernameOrEmail: "admin",
       password: "op@1234",
     });
     setErrors({});
@@ -70,9 +68,8 @@ export default function LoginPage() {
           <span className="eyebrow">Quiz Tournament Portal</span>
           <h1 className="auth-title">React frontend for the Spring Boot quiz backend.</h1>
           <p className="lead">
-            Login uses the real backend contract: a username, email, and password
-            are posted to <code>/api/auth/login</code>. Existing users are validated,
-            and new player users are created automatically by the backend.
+            Login uses the real backend contract: <code>usernameOrEmail</code> and
+            <code> password</code> are posted to <code>/api/auth/login</code>.
           </p>
           <div className="alert alert-info">
             Admin shortcut: <strong>admin / admin@quiztournament.local / op@1234</strong>
@@ -86,8 +83,8 @@ export default function LoginPage() {
             <div>
               <h2>Sign in</h2>
               <p className="helper-text">
-                Players can use any new username and email combination. The admin
-                account is seeded by the backend initializer.
+                Use an existing account from the backend. Routing after login is
+                based on the returned user role.
               </p>
             </div>
 
@@ -95,21 +92,12 @@ export default function LoginPage() {
 
             <form className="form-grid" onSubmit={handleSubmit}>
               <TextField
-                label="Username"
-                name="username"
-                value={values.username}
+                label="Username or Email"
+                name="usernameOrEmail"
+                value={values.usernameOrEmail}
                 onChange={handleChange}
-                error={errors.username}
-                placeholder="Enter your username"
-              />
-              <TextField
-                label="Email"
-                name="email"
-                type="email"
-                value={values.email}
-                onChange={handleChange}
-                error={errors.email}
-                placeholder="Enter your email"
+                error={errors.usernameOrEmail}
+                placeholder="Enter your username or email"
               />
               <TextField
                 label="Password"

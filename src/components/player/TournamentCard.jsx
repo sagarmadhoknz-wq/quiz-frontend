@@ -7,9 +7,9 @@ export default function TournamentCard({ tournament }) {
     <article className="panel stack">
       <div className="row-between">
         <div>
-          <h3>{tournament.title}</h3>
+          <h3>{tournament.name}</h3>
           <p className="muted">
-            {tournament.subject} • {tournament.difficulty}
+            {tournament.category} | {tournament.difficulty}
           </p>
         </div>
         <StatusBadge status={tournament.status} />
@@ -23,6 +23,10 @@ export default function TournamentCard({ tournament }) {
         <div>
           <div className="stat-label">Likes</div>
           <div>{tournament.totalLikes}</div>
+        </div>
+        <div>
+          <div className="stat-label">Passing score</div>
+          <div>{tournament.minPassingScore}%</div>
         </div>
         <div>
           <div className="stat-label">Created by</div>

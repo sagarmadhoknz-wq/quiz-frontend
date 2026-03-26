@@ -1,14 +1,8 @@
 export function validateLogin(values) {
   const errors = {};
 
-  if (!values.username?.trim()) {
-    errors.username = "Username is required";
-  }
-
-  if (!values.email?.trim()) {
-    errors.email = "Email is required";
-  } else if (!/\S+@\S+\.\S+/.test(values.email)) {
-    errors.email = "Email must be valid";
+  if (!values.usernameOrEmail?.trim()) {
+    errors.usernameOrEmail = "Username or email is required";
   }
 
   if (!values.password?.trim()) {
@@ -21,20 +15,33 @@ export function validateLogin(values) {
 export function validateTournamentCreate(values) {
   const errors = {};
 
-  if (!values.title?.trim()) {
-    errors.title = "Title is required";
-  }
-
-  if (!values.status) {
-    errors.status = "Status is required";
+  if (!values.name?.trim()) {
+    errors.name = "Tournament name is required";
   }
 
   if (!values.categoryId) {
-    errors.categoryId = "Category is required";
+    errors.categoryId = "Category ID is required";
   }
 
   if (!values.difficulty) {
     errors.difficulty = "Difficulty is required";
+  }
+
+  if (!values.startDate) {
+    errors.startDate = "Start date is required";
+  }
+
+  if (!values.endDate) {
+    errors.endDate = "End date is required";
+  }
+
+  if (!values.minPassingScore) {
+    errors.minPassingScore = "Minimum passing score is required";
+  } else {
+    const score = Number(values.minPassingScore);
+    if (Number.isNaN(score) || score < 1 || score > 100) {
+      errors.minPassingScore = "Minimum passing score must be between 1 and 100";
+    }
   }
 
   return errors;
@@ -43,49 +50,27 @@ export function validateTournamentCreate(values) {
 export function validateTournamentUpdate(values) {
   const errors = {};
 
-  if (!values.title?.trim()) {
-    errors.title = "Title is required";
+  if (!values.name?.trim()) {
+    errors.name = "Tournament name is required";
   }
 
-  if (!values.subject?.trim()) {
-    errors.subject = "Subject is required";
+  if (!values.startDate) {
+    errors.startDate = "Start date is required";
   }
 
-  if (!values.status) {
-    errors.status = "Status is required";
-  }
-
-  if (!values.totalQuestions || Number(values.totalQuestions) < 1) {
-    errors.totalQuestions = "Total questions must be at least 1";
+  if (!values.endDate) {
+    errors.endDate = "End date is required";
   }
 
   return errors;
 }
 
-export function validateQuizSubmission(values, totalQuestions) {
+export function validateQuizSubmission(values) {
   const errors = {};
-  const score = Number(values.score);
-  const totalAnswered = Number(values.totalAnswered);
+  const answerCount = Object.keys(values.answers ?? {}).length;
 
-  if (Number.isNaN(score) || score < 0) {
-    errors.score = "Score must be zero or greater";
-  }
-
-  if (Number.isNaN(totalAnswered) || totalAnswered < 0) {
-    errors.totalAnswered = "Total answered must be zero or greater";
-  }
-
-  if (!Number.isNaN(totalAnswered) && totalQuestions && totalAnswered > totalQuestions) {
-    errors.totalAnswered = "Total answered cannot exceed the question count";
-  }
-
-  if (
-    !Number.isNaN(score) &&
-    !Number.isNaN(totalAnswered) &&
-    totalAnswered >= 0 &&
-    score > totalAnswered
-  ) {
-    errors.score = "Fallback score cannot exceed answered questions";
+  if (answerCount === 0) {
+    errors.answers = "Select at least one answer before submitting";
   }
 
   return errors;

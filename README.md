@@ -57,24 +57,12 @@ If not set, the frontend defaults to `http://localhost:8080`.
 - `/player/tournaments/:tournamentId/result`
   - Result screen
 
-Current routing role logic is based on the seeded backend admin account:
-
-- username: `admin`
-- email: `admin@quiztournament.local`
-
-TODO backend: replace this with an explicit role field when the backend returns one in `UserResponse`.
+Current routing role logic uses `user.role.toLowerCase()` from the backend login response.
 
 ## Known Limitations
 
-- `QuestionResponse` does not expose `correctAnswer` or the three incorrect answers separately.
-  - Result: the frontend cannot truthfully show correct/incorrect feedback after each question.
-  - Result: the admin detail page cannot show real correct/incorrect answers from the API.
-- No answer-check endpoint exists.
-  - Result: the frontend cannot compute a validated score from selected answers alone.
 - No category lookup endpoint exists.
   - Result: category selection currently uses a static category list in the frontend.
-- No explicit user role is returned by the login API.
-  - Result: role detection currently relies on the seeded admin credentials.
 - No endpoint tells the frontend whether the current user has already liked a tournament.
   - Result: the like toggle is not state-aware, so the player detail page exposes separate Like and Unlike actions instead of a derived toggle state.
 

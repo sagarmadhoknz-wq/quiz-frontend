@@ -2,7 +2,6 @@ import TextField from "../common/TextField";
 import {
   CATEGORY_OPTIONS,
   DIFFICULTY_OPTIONS,
-  TOURNAMENT_STATUS_OPTIONS,
 } from "../../utils/constants";
 
 export default function TournamentForm({
@@ -18,24 +17,15 @@ export default function TournamentForm({
     <form className="form-grid" onSubmit={onSubmit}>
       <TextField
         label="Name"
-        name="title"
-        value={values.title}
+        name="name"
+        value={values.name}
         onChange={onChange}
-        error={errors.title}
+        error={errors.name}
         placeholder="Enter name"
       />
 
       {mode === "create" ? (
         <>
-          <TextField
-            label="Status"
-            name="status"
-            as="select"
-            value={values.status}
-            onChange={onChange}
-            error={errors.status}
-            options={TOURNAMENT_STATUS_OPTIONS}
-          />
           <TextField
             label="Category"
             name="categoryId"
@@ -54,34 +44,50 @@ export default function TournamentForm({
             error={errors.difficulty}
             options={DIFFICULTY_OPTIONS}
           />
+          <TextField
+            label="Start Date"
+            name="startDate"
+            type="datetime-local"
+            value={values.startDate}
+            onChange={onChange}
+            error={errors.startDate}
+          />
+          <TextField
+            label="End Date"
+            name="endDate"
+            type="datetime-local"
+            value={values.endDate}
+            onChange={onChange}
+            error={errors.endDate}
+          />
+          <TextField
+            label="Minimum Passing Score"
+            name="minPassingScore"
+            type="number"
+            min="1"
+            max="100"
+            value={values.minPassingScore}
+            onChange={onChange}
+            error={errors.minPassingScore}
+          />
         </>
       ) : (
         <>
           <TextField
-            label="Category"
-            name="subject"
-            value={values.subject}
+            label="Start Date"
+            name="startDate"
+            type="datetime-local"
+            value={values.startDate}
             onChange={onChange}
-            error={errors.subject}
-            placeholder="Update category label"
+            error={errors.startDate}
           />
           <TextField
-            label="Status"
-            name="status"
-            as="select"
-            value={values.status}
+            label="End Date"
+            name="endDate"
+            type="datetime-local"
+            value={values.endDate}
             onChange={onChange}
-            error={errors.status}
-            options={TOURNAMENT_STATUS_OPTIONS}
-          />
-          <TextField
-            label="Total Questions"
-            name="totalQuestions"
-            type="number"
-            min="1"
-            value={values.totalQuestions}
-            onChange={onChange}
-            error={errors.totalQuestions}
+            error={errors.endDate}
           />
         </>
       )}

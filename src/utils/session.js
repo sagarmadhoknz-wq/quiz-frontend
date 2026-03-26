@@ -1,24 +1,7 @@
-import {
-  ADMIN_CREDENTIALS,
-  QUIZ_RESULT_STORAGE_KEY,
-  SESSION_STORAGE_KEY,
-} from "./constants";
+import { QUIZ_RESULT_STORAGE_KEY, SESSION_STORAGE_KEY } from "./constants";
 
 function isBrowser() {
   return typeof window !== "undefined";
-}
-
-export function deriveRole(user) {
-  if (!user) {
-    return "player";
-  }
-
-  // TODO: Replace this seeded-admin check when the backend returns an explicit role in UserResponse.
-  const isAdminUser =
-    user.username === ADMIN_CREDENTIALS.username &&
-    user.email === ADMIN_CREDENTIALS.email;
-
-  return isAdminUser ? "admin" : "player";
 }
 
 export function saveSession(user) {
@@ -28,7 +11,7 @@ export function saveSession(user) {
 
   const session = {
     user,
-    role: deriveRole(user),
+    role: user?.role?.toLowerCase() ?? "player",
   };
 
   window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));

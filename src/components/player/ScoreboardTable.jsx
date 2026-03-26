@@ -6,17 +6,19 @@ export default function ScoreboardTable({ scores }) {
           <tr>
             <th>Player</th>
             <th>Score</th>
-            <th>Answered</th>
-            <th>Completed</th>
+            <th>Total Questions</th>
+            <th>Passed</th>
+            <th>Completed Date</th>
           </tr>
         </thead>
         <tbody>
           {scores.map((score) => (
             <tr key={`${score.userId}-${score.quizTournamentId}`}>
-              <td>{score.username}</td>
+              <td>{score.playerName}</td>
               <td>{score.score}</td>
-              <td>{score.totalAnswered}</td>
-              <td>{score.completed ? "Yes" : "No"}</td>
+              <td>{score.totalQuestions}</td>
+              <td>{score.passed ? "Yes" : "No"}</td>
+              <td>{score.completedDate ? new Date(score.completedDate).toLocaleString() : "N/A"}</td>
             </tr>
           ))}
         </tbody>

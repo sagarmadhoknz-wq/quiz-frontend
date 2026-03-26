@@ -1,4 +1,8 @@
 export function buildQuestionOptions(question) {
+  if (Array.isArray(question.options)) {
+    return question.options.filter(Boolean);
+  }
+
   return [
     question.optionA,
     question.optionB,

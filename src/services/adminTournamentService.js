@@ -27,3 +27,15 @@ export function deleteTournament(tournamentId) {
     method: "DELETE",
   });
 }
+
+export function getTournamentAnalytics(tournamentId) {
+  return apiRequest(`/api/admin/tournaments/${tournamentId}/analytics`);
+}
+
+export function getTournamentLikes(tournamentId) {
+  return apiRequest(`/api/admin/tournaments/${tournamentId}/likes`);
+}
+
+export function getAdminUsers() {
+  return apiRequest("/api/admin/users");
+}

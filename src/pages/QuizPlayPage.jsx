@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AlertMessage from "../components/common/AlertMessage";
-import TextField from "../components/common/TextField";
 import AppShell from "../components/layout/AppShell";
 import QuestionCard from "../components/player/QuestionCard";
 import {
@@ -21,13 +20,8 @@ export default function QuizPlayPage() {
   const [error, setError] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({});
-  const [submitValues, setSubmitValues] = useState({
-    score: 0,
-    totalAnswered: 0,
-  });
   const [submitErrors, setSubmitErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
-  const [questionFeedback, setQuestionFeedback] = useState("");
 
   useEffect(() => {
     async function loadTournament() {
@@ -58,34 +52,17 @@ export default function QuizPlayPage() {
       return;
     }
 
-    const nextAnswers = { ...answers, [questionId]: option };
-    const nextAnsweredCount = countAnsweredQuestions(nextAnswers);
-
-    setAnswers(nextAnswers);
-    setQuestionFeedback(
-      "Correct/incorrect feedback is unavailable from the current backend because question answers are not exposed in QuestionResponse."
-    );
-    setSubmitValues((current) => ({
-      ...current,
-      totalAnswered: nextAnsweredCount,
-    }));
-  }
-
-  function handleSubmissionFieldChange(event) {
-    const { name, value } = event.target;
-    setSubmitValues((current) => ({ ...current, [name]: value }));
-    setSubmitErrors((current) => ({ ...current, [name]: "" }));
+    setAnswers((current) => ({ ...current, [questionId]: option }));
+    setSubmitErrors((current) => ({ ...current, answers: "" }));
   }
 
   async function handleSubmit() {
     const payload = {
       userId: session?.user?.id,
-      quizTournamentId: Number(tournamentId),
-      score: Number(submitValues.score),
-      totalAnswered: Number(submitValues.totalAnswered),
+      answers,
     };
 
-    const validationErrors = validateQuizSubmission(payload, totalQuestions);
+    const validationErrors = validateQuizSubmission(payload);
     setSubmitErrors(validationErrors);
     setError("");
 
@@ -99,8 +76,7 @@ export default function QuizPlayPage() {
       const result = await submitTournament(tournamentId, payload);
       const latestResult = {
         ...result,
-        tournamentTitle: tournament?.title,
-        totalQuestions,
+        tournamentName: tournament?.name,
       };
       saveLatestResult(latestResult);
       navigate(`/player/tournaments/${tournamentId}/result`, {
@@ -118,7 +94,7 @@ export default function QuizPlayPage() {
   return (
     <AppShell
       title="Quiz play"
-      subtitle="This flow uses the player details endpoint for questions and the player submit endpoint for results."
+      subtitle="Answers are submitted to the backend for server-side score calculation and feedback."
     >
       {error ? <AlertMessage type="error">{error}</AlertMessage> : null}
 
@@ -135,7 +111,7 @@ export default function QuizPlayPage() {
               selectedAnswer={answers[currentQuestion.id]}
               onSelect={handleAnswerSelect}
             />
-            {questionFeedback ? <AlertMessage type="info">{questionFeedback}</AlertMessage> : null}
+            {submitErrors.answers ? <AlertMessage type="error">{submitErrors.answers}</AlertMessage> : null}
 
             <div className="row-between">
               <button
@@ -164,12 +140,10 @@ export default function QuizPlayPage() {
 
           <section className="panel stack">
             <div>
-              <h2>Quiz Result Submission</h2>
+              <h2>Quiz Submission</h2>
               <p className="helper-text">
-                TODO backend: `QuestionResponse` does not expose correct answers and
-                there is no answer-check endpoint. The frontend therefore collects
-                answer selections for the play flow but requires the final aggregate
-                score to be entered explicitly before calling the real submit API.
+                The frontend sends <code>userId</code> and an <code>answers</code> map.
+                The backend validates answers and returns score plus per-question feedback.
               </p>
             </div>
 
@@ -182,35 +156,18 @@ export default function QuizPlayPage() {
                 <span className="stat-label">Tournament total</span>
                 <strong>{totalQuestions}</strong>
               </div>
-            </div>
-
-            <div className="form-grid">
-              <TextField
-                label="Final Score"
-                name="score"
-                type="number"
-                min="0"
-                value={submitValues.score}
-                onChange={handleSubmissionFieldChange}
-                error={submitErrors.score}
-              />
-              <TextField
-                label="Total Answered"
-                name="totalAnswered"
-                type="number"
-                min="0"
-                value={submitValues.totalAnswered}
-                onChange={handleSubmissionFieldChange}
-                error={submitErrors.totalAnswered}
-              />
+              <div className="row-between">
+                <span className="stat-label">Passing score</span>
+                <strong>{tournament.minPassingScore}%</strong>
+              </div>
             </div>
 
             <div className="alert alert-info">
-              The DTO sent to the backend is <code>{`{ userId, quizTournamentId, score, totalAnswered }`}</code>.
+              The DTO sent to the backend is <code>{`{ userId, answers: { questionId: selectedAnswer } }`}</code>.
             </div>
 
             <button className="button" type="button" onClick={handleSubmit} disabled={submitting}>
-              {submitting ? "Submitting..." : "Submit result"}
+              {submitting ? "Submitting..." : "Submit answers"}
             </button>
           </section>
         </div>

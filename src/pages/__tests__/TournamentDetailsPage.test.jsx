@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import { within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { vi } from "vitest";
 import TournamentDetailsPage from "../TournamentDetailsPage";
@@ -22,9 +23,11 @@ vi.mock("../../services/authService", () => ({
 }));
 
 const getAdminTournamentById = vi.fn();
+const getTournamentAnalytics = vi.fn();
 
 vi.mock("../../services/adminTournamentService", () => ({
   getAdminTournamentById: (...args) => getAdminTournamentById(...args),
+  getTournamentAnalytics: (...args) => getTournamentAnalytics(...args),
 }));
 
 vi.mock("../../services/playerTournamentService", () => ({
@@ -47,12 +50,15 @@ describe("TournamentDetailsPage", () => {
     vi.clearAllMocks();
     getAdminTournamentById.mockResolvedValue({
       id: 10,
-      title: "Science Masters",
-      subject: "Science and Nature",
+      name: "Science Masters",
+      category: "Science and Nature",
       totalQuestions: 2,
       categoryId: 17,
       difficulty: "easy",
-      status: "ACTIVE",
+      status: "ONGOING",
+      startDate: "2026-03-26T10:00:00",
+      endDate: "2026-03-27T10:00:00",
+      minPassingScore: 50,
       createdAt: "2026-03-26T10:00:00",
       createdByUserId: 1,
       createdByUsername: "admin",
@@ -60,14 +66,24 @@ describe("TournamentDetailsPage", () => {
       questions: [
         {
           id: 101,
+          type: "multiple",
           questionText: "What planet is known as the Red Planet?",
-          optionA: "Earth",
-          optionB: "Mars",
-          optionC: "Jupiter",
-          optionD: "Saturn",
+          options: ["Earth", "Mars", "Jupiter", "Saturn"],
+          correctAnswer: "Mars",
           points: 1,
         },
       ],
+    });
+    getTournamentAnalytics.mockResolvedValue({
+      tournamentId: 10,
+      tournamentName: "Science Masters",
+      totalAttempts: 0,
+      totalQuestions: 2,
+      averageScore: 0,
+      highestScore: 0,
+      lowestScore: 0,
+      passRate: 0,
+      totalLikes: 3,
     });
   });
 
@@ -84,11 +100,10 @@ describe("TournamentDetailsPage", () => {
     );
 
     expect(await screen.findByText("Question Details")).toBeInTheDocument();
-    expect(screen.getByTestId("question-detail-101")).toBeInTheDocument();
+    const questionCard = screen.getByTestId("question-detail-101");
+    expect(questionCard).toBeInTheDocument();
     expect(screen.getByText("What planet is known as the Red Planet?")).toBeInTheDocument();
     expect(screen.getByText("Correct Answer")).toBeInTheDocument();
-    expect(
-      screen.getByText("Not exposed by current backend DTO")
-    ).toBeInTheDocument();
+    expect(within(questionCard).getAllByText("Mars").length).toBeGreaterThan(0);
   });
 });

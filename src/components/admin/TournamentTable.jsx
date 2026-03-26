@@ -24,13 +24,13 @@ export default function TournamentTable({ tournaments, onEdit, onDelete }) {
               <td>{tournament.createdByUsername}</td>
               <td>
                 <Link className="button-ghost" to={`/admin/tournaments/${tournament.id}`}>
-                  {tournament.title}
+                  {tournament.name}
                 </Link>
                 <div className="muted">{formatDateTime(tournament.createdAt)}</div>
               </td>
               <td>
-                <div>{getCategoryLabel(tournament.categoryId)}</div>
-                <div className="muted">{tournament.subject}</div>
+                <div>{tournament.category ?? getCategoryLabel(tournament.categoryId)}</div>
+                <div className="muted">ID: {tournament.categoryId}</div>
               </td>
               <td>{tournament.difficulty}</td>
               <td>

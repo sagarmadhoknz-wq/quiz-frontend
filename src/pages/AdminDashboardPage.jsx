@@ -10,8 +10,11 @@ import {
   createTournament,
   deleteTournament,
   getAdminTournaments,
+  getTournamentAnalytics,
+  getTournamentLikes,
   updateTournament,
 } from "../services/adminTournamentService";
+import { toDateTimeLocalValue } from "../utils/formatters";
 import { getSession } from "../utils/session";
 import {
   validateTournamentCreate,
@@ -19,18 +22,19 @@ import {
 } from "../utils/validators";
 
 const createInitialState = {
-  title: "",
-  status: "ACTIVE",
+  name: "",
   categoryId: "",
   difficulty: "easy",
+  startDate: "",
+  endDate: "",
+  minPassingScore: 50,
 };
 
 function getUpdateInitialState(tournament) {
   return {
-    title: tournament?.title ?? "",
-    subject: tournament?.subject ?? "",
-    status: tournament?.status ?? "ACTIVE",
-    totalQuestions: tournament?.totalQuestions ?? 10,
+    name: tournament?.name ?? "",
+    startDate: toDateTimeLocalValue(tournament?.startDate),
+    endDate: toDateTimeLocalValue(tournament?.endDate),
   };
 }
 
@@ -49,6 +53,8 @@ export default function AdminDashboardPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [selectedAnalytics, setSelectedAnalytics] = useState(null);
+  const [selectedLikeCount, setSelectedLikeCount] = useState(null);
 
   async function loadTournaments() {
     setLoading(true);
@@ -71,7 +77,7 @@ export default function AdminDashboardPage() {
   const stats = useMemo(() => {
     return {
       total: tournaments.length,
-      active: tournaments.filter((item) => item.status === "ACTIVE").length,
+      active: tournaments.filter((item) => item.status === "ONGOING").length,
       questions: tournaments.reduce((sum, item) => sum + (item.totalQuestions ?? 0), 0),
       likes: tournaments.reduce((sum, item) => sum + (item.totalLikes ?? 0), 0),
     };
@@ -104,11 +110,13 @@ export default function AdminDashboardPage() {
 
     try {
       await createTournament({
-        title: createValues.title.trim(),
-        status: createValues.status,
+        name: createValues.name.trim(),
         createdByUserId: session.user.id,
         categoryId: Number(createValues.categoryId),
         difficulty: createValues.difficulty,
+        startDate: createValues.startDate,
+        endDate: createValues.endDate,
+        minPassingScore: Number(createValues.minPassingScore),
       });
       setCreateOpen(false);
       setCreateValues(createInitialState);
@@ -137,10 +145,9 @@ export default function AdminDashboardPage() {
 
     try {
       await updateTournament(editingTournament.id, {
-        title: updateValues.title.trim(),
-        subject: updateValues.subject.trim(),
-        status: updateValues.status,
-        totalQuestions: Number(updateValues.totalQuestions),
+        name: updateValues.name.trim(),
+        startDate: updateValues.startDate,
+        endDate: updateValues.endDate,
       });
       setEditingTournament(null);
       setSuccessMessage("Tournament updated successfully.");
@@ -171,6 +178,24 @@ export default function AdminDashboardPage() {
       setError(deleteError.message);
     } finally {
       setDeleting(false);
+    }
+  }
+
+  async function openEditModal(tournament) {
+    setEditingTournament(tournament);
+    setUpdateValues(getUpdateInitialState(tournament));
+    setUpdateErrors({});
+
+    try {
+      const [analytics, likes] = await Promise.all([
+        getTournamentAnalytics(tournament.id),
+        getTournamentLikes(tournament.id),
+      ]);
+      setSelectedAnalytics(analytics);
+      setSelectedLikeCount(likes.totalLikes);
+    } catch {
+      setSelectedAnalytics(null);
+      setSelectedLikeCount(null);
     }
   }
 
@@ -228,11 +253,7 @@ export default function AdminDashboardPage() {
         ) : (
           <TournamentTable
             tournaments={tournaments}
-            onEdit={(tournament) => {
-              setEditingTournament(tournament);
-              setUpdateValues(getUpdateInitialState(tournament));
-              setUpdateErrors({});
-            }}
+            onEdit={openEditModal}
             onDelete={setDeletingTournament}
           />
         )}
@@ -259,9 +280,37 @@ export default function AdminDashboardPage() {
       {editingTournament ? (
         <Modal
           title="Update tournament"
-          subtitle="This sends the backend update DTO: title, subject, status, and totalQuestions."
+          subtitle="This sends the backend update DTO: name, startDate, and endDate."
           onClose={() => setEditingTournament(null)}
         >
+          {selectedAnalytics ? (
+            <div className="stats-row">
+              <div className="stat-card">
+                <div className="stat-label">Attempts</div>
+                <div className="stat-value" style={{ fontSize: "1.2rem" }}>
+                  {selectedAnalytics.totalAttempts}
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-label">Average Score</div>
+                <div className="stat-value" style={{ fontSize: "1.2rem" }}>
+                  {selectedAnalytics.averageScore}
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-label">Pass Rate</div>
+                <div className="stat-value" style={{ fontSize: "1.2rem" }}>
+                  {selectedAnalytics.passRate}%
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-label">Likes</div>
+                <div className="stat-value" style={{ fontSize: "1.2rem" }}>
+                  {selectedLikeCount ?? selectedAnalytics.totalLikes}
+                </div>
+              </div>
+            </div>
+          ) : null}
           <TournamentForm
             mode="update"
             values={updateValues}
