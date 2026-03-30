@@ -3,6 +3,7 @@ import AdminDashboardPage from "../pages/AdminDashboardPage";
 import LoginPage from "../pages/LoginPage";
 import PlayerDashboardPage from "../pages/PlayerDashboardPage";
 import QuizPlayPage from "../pages/QuizPlayPage";
+import RegisterPage from "../pages/RegisterPage";
 import ResultPage from "../pages/ResultPage";
 import TournamentDetailsPage from "../pages/TournamentDetailsPage";
 import ProtectedRoute from "./ProtectedRoute";
@@ -11,6 +12,7 @@ export default function AppRouter() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
       <Route
         path="/admin"
         element={

@@ -30,6 +30,12 @@ export default function TournamentDetailsPage({ mode }) {
   const [error, setError] = useState("");
   const [feedback, setFeedback] = useState("");
   const [likeBusy, setLikeBusy] = useState(false);
+  const currentPlayerScore =
+    mode === "player" && session?.user?.id
+      ? scores.find((score) => Number(score.userId) === Number(session.user.id)) ?? null
+      : null;
+  const hasCompletedTournament = Boolean(currentPlayerScore);
+  const canPlayTournament = mode === "player" && tournament?.status === "ONGOING" && !hasCompletedTournament;
 
   useEffect(() => {
     async function loadData() {
@@ -110,9 +116,11 @@ export default function TournamentDetailsPage({ mode }) {
             >
               {likeBusy ? "Saving..." : "Unlike"}
             </button>
-            <Link className="button" to={`/player/tournaments/${tournament.id}/play`}>
-              Play quiz
-            </Link>
+            {canPlayTournament ? (
+              <Link className="button" to={`/player/tournaments/${tournament.id}/play`}>
+                Play quiz
+              </Link>
+            ) : null}
           </>
         ) : null
       }
@@ -134,6 +142,17 @@ export default function TournamentDetailsPage({ mode }) {
               </div>
               <StatusBadge status={tournament.status} />
             </div>
+
+            {mode === "player" && hasCompletedTournament ? (
+              <AlertMessage type="info">
+                You have already completed this quiz. Your score: {currentPlayerScore.score}/
+                {currentPlayerScore.totalQuestions}
+              </AlertMessage>
+            ) : null}
+
+            {mode === "player" && !hasCompletedTournament && tournament.status !== "ONGOING" ? (
+              <AlertMessage type="info">This quiz is not currently open for play.</AlertMessage>
+            ) : null}
 
             <div className="stats-row">
               <div className="stat-card">

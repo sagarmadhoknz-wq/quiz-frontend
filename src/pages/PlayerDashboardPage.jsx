@@ -29,8 +29,13 @@ export default function PlayerDashboardPage() {
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("ongoing");
   const [filters, setFilters] = useState(SEARCH_FILTER_DEFAULTS);
+  const [searchMode, setSearchMode] = useState(false);
 
   useEffect(() => {
+    if (searchMode) {
+      return;
+    }
+
     async function loadData() {
       setLoading(true);
       setError("");
@@ -60,22 +65,37 @@ export default function PlayerDashboardPage() {
     }
 
     loadData();
-  }, [activeTab, session.user.id]);
+  }, [activeTab, searchMode, session.user.id]);
 
   async function handleSearch(event) {
     event.preventDefault();
+
+    if (!filters.category && !filters.difficulty) {
+      return;
+    }
+
     setLoading(true);
     setError("");
 
     try {
       const data = await searchTournaments(filters);
       setTournaments(data);
-      setActiveTab("search");
+      setSearchMode(true);
     } catch (searchError) {
       setError(searchError.message);
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleTabChange(tabValue) {
+    setSearchMode(false);
+    setActiveTab(tabValue);
+  }
+
+  function clearSearch() {
+    setFilters(SEARCH_FILTER_DEFAULTS);
+    setSearchMode(false);
   }
 
   const stats = useMemo(() => {
@@ -113,9 +133,9 @@ export default function PlayerDashboardPage() {
           {PLAYER_TOURNAMENT_TABS.map((tab) => (
             <button
               key={tab.value}
-              className={activeTab === tab.value ? "button" : "button-secondary"}
+              className={activeTab === tab.value && !searchMode ? "button" : "button-secondary"}
               type="button"
-              onClick={() => setActiveTab(tab.value)}
+              onClick={() => handleTabChange(tab.value)}
             >
               {tab.label}
             </button>
@@ -142,11 +162,24 @@ export default function PlayerDashboardPage() {
             options={DIFFICULTY_OPTIONS}
           />
           <div className="form-group" style={{ alignSelf: "end" }}>
-            <button className="button" type="submit">
-              Search
-            </button>
+            <div className="row-between">
+              <button className="button" type="submit">
+                Search
+              </button>
+              {searchMode ? (
+                <button className="button-secondary" type="button" onClick={clearSearch}>
+                  Clear
+                </button>
+              ) : null}
+            </div>
           </div>
         </form>
+
+        {searchMode ? (
+          <div className="alert alert-info">
+            Search Results
+          </div>
+        ) : null}
       </section>
 
       <section className="grid grid-2">

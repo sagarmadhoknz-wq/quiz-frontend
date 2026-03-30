@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import AlertMessage from "../components/common/AlertMessage";
 import AppShell from "../components/layout/AppShell";
 import QuestionCard from "../components/player/QuestionCard";
 import {
   getPlayerTournamentById,
+  getTournamentScores,
   submitTournament,
 } from "../services/playerTournamentService";
 import { getSession, saveLatestResult } from "../utils/session";
@@ -22,6 +23,7 @@ export default function QuizPlayPage() {
   const [answers, setAnswers] = useState({});
   const [submitErrors, setSubmitErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [existingAttempt, setExistingAttempt] = useState(null);
 
   useEffect(() => {
     async function loadTournament() {
@@ -29,8 +31,14 @@ export default function QuizPlayPage() {
       setError("");
 
       try {
-        const data = await getPlayerTournamentById(tournamentId);
-        setTournament(data);
+        const [tournamentResponse, scoresResponse] = await Promise.all([
+          getPlayerTournamentById(tournamentId),
+          getTournamentScores(tournamentId),
+        ]);
+        setTournament(tournamentResponse);
+        setExistingAttempt(
+          scoresResponse.find((score) => Number(score.userId) === Number(session?.user?.id)) ?? null
+        );
       } catch (loadError) {
         setError(loadError.message);
       } finally {
@@ -100,6 +108,23 @@ export default function QuizPlayPage() {
 
       {loading ? (
         <div className="panel">Loading quiz...</div>
+      ) : existingAttempt ? (
+        <section className="panel stack">
+          <AlertMessage type="info">
+            You have already completed this quiz. Your score: {existingAttempt.score}/
+            {existingAttempt.totalQuestions}
+          </AlertMessage>
+          <Link className="button" to={`/player/tournaments/${tournamentId}`}>
+            Back to tournament details
+          </Link>
+        </section>
+      ) : tournament.status !== "ONGOING" ? (
+        <section className="panel stack">
+          <AlertMessage type="info">This quiz is not currently open for play.</AlertMessage>
+          <Link className="button" to={`/player/tournaments/${tournamentId}`}>
+            Back to tournament details
+          </Link>
+        </section>
       ) : !tournament || !currentQuestion ? (
         <div className="panel">The tournament could not be loaded for play.</div>
       ) : (

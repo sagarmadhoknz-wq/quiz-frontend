@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import AlertMessage from "../components/common/AlertMessage";
 import TextField from "../components/common/TextField";
 import { login } from "../services/authService";
@@ -116,6 +116,9 @@ export default function LoginPage() {
                 <button className="button" type="submit" disabled={submitting}>
                   {submitting ? "Signing in..." : "Login"}
                 </button>
+              </div>
+              <div className="helper-text">
+                New player? <Link to="/register">Create an account</Link>
               </div>
             </form>
           </div>
